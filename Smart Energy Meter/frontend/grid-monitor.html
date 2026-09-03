@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Power Grid Monitor — Power Systems Monitor</title>
+<link rel="stylesheet" href="css/styles.css">
+<style>
+  .grid-panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 1.25rem; }
+  .grid-panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+  .substation-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; }
+  .substation-card { background: var(--panel-alt); border: 1px solid var(--border-soft); border-radius: var(--radius); padding: 0.85rem; }
+  .substation-card.high { border-color: var(--danger); box-shadow: 0 0 0 1px var(--danger) inset; }
+  .substation-card.low { border-color: var(--warn); box-shadow: 0 0 0 1px var(--warn) inset; }
+  .substation-card h4 { margin: 0 0 0.5rem; font-size: 0.85rem; color: var(--text-dim); }
+  .feeder-list { display: flex; flex-direction: column; gap: 0.3rem; }
+  .feeder-row { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.76rem; padding: 0.15rem 0.35rem; border-radius: 4px; }
+  .feeder-row.high { background: var(--danger-dim); color: var(--danger); }
+  .feeder-row.low { background: var(--warn-dim); color: var(--warn); }
+  .feeder-row.nodata { color: var(--text-dim); font-style: italic; }
+  .feeder-row.offline { color: var(--text-dim); font-style: italic; }
+  .feeder-row.offline span:last-child { color: var(--warn); }
+</style>
+</head>
+<body class="bg-grid">
+  <header class="topbar">
+    <a class="brand" href="index.html"><span class="dot"></span> Power Systems Monitor</a>
+    <nav><a href="index.html">Home</a></nav>
+  </header>
+
+  <main class="page-shell">
+    <div class="eyebrow">Live Grid Status</div>
+    <div class="flex-between">
+      <h1 style="font-size:1.6rem;">🔌 Power Grid Monitor</h1>
+      <span class="dim mono" id="safeRangeLabel" style="font-size:0.8rem;text-align:right;"></span>
+    </div>
+
+    <div class="grid-panels mt-lg" id="panels"></div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script>
+    function renderPanels(data) {
+      const r = data.safeRangeByPhase || {};
+      const oneP = r['1-phase'], threeP = r['3-phase'];
+      document.getElementById('safeRangeLabel').innerHTML =
+        (oneP ? `1-Phase safe: ${oneP.low}–${oneP.high} V` : '') +
+        (oneP && threeP ? '<br>' : '') +
+        (threeP ? `3-Phase safe: ${threeP.low}–${threeP.high} V` : '');
+      document.getElementById('panels').innerHTML = data.panels.map((panel) => `
+        <div class="panel">
+          <div class="grid-panel-head">
+            <h3 style="margin:0;">${escapeHtml(panel.name)}</h3>
+            <span class="pill ${panel.status === 'NORMAL' ? 'pill-ok' : panel.status === 'OVERLOAD' ? 'pill-danger' : 'pill-warn'}">${panel.status}</span>
+          </div>
+          <div class="substation-grid">
+            ${panel.substations.map((sub) => `
+              <div class="substation-card ${sub.status !== 'normal' ? sub.status : ''}">
+                <h4>${escapeHtml(sub.name)}</h4>
+                <div class="feeder-list">
+                  ${sub.feeders.length ? sub.feeders.map((f) => `
+                    <div class="feeder-row ${f.status !== 'normal' ? f.status : ''}">
+                      <span>${escapeHtml(f.name)} <span class="dim">(${f.phase === '3-phase' ? '3-Ph' : '1-Ph'})</span></span><span>${
+                        f.status === 'nodata' ? 'no reading yet'
+                        : f.status === 'offline' ? '0V &middot; offline'
+                        : f.voltage + 'V'
+                      }</span>
+                    </div>
+                  `).join('') : `<div class="feeder-row nodata"><span>No consumers yet</span></div>`}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function refresh() {
+      try {
+        const data = await Api.getGrid();
+        renderPanels(data);
+      } catch (err) {
+        document.getElementById('panels').innerHTML = `<div class="empty-state">${escapeHtml(err.message)}</div>`;
+      }
+    }
+
+    refresh();
+    setInterval(refresh, 5000);
+  </script>
+</body>
+</html>
