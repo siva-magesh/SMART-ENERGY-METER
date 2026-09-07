@@ -1,0 +1,291 @@
+{
+  "meta": {
+    "nextCustomerId": 2,
+    "nextFeederReadingId": 1
+  },
+  "stations": [
+    {
+      "id": 1,
+      "code": "EB001",
+      "name": "EB Station 001 - Ariyalur",
+      "passwordHash": "99369faf3223713bec4447a2f10ec420:687f65813b20e512b2693844b67653b585920f06f755154a7fd1d4269125c5f56a04a116011f47f7bfc6bc5985cfeb82ae8940bb839b484297f40d29445bc2e4"
+    },
+    {
+      "id": 2,
+      "code": "EB002",
+      "name": "EB Station 002 - Perambalur",
+      "passwordHash": "48d6debc0fda0e7c22009487e8c30237:26db6311fe2fe12cf8fc6bb4decb1313c095227a7c4424f173c0f2ed76811339cdf472730658ee4bad511db3fa4ceb1604af47b513a2ffbf39fce355fe5a73b3"
+    },
+    {
+      "id": 3,
+      "code": "EB003",
+      "name": "EB Station 003 - Trichy North",
+      "passwordHash": "6b1fb02b8bdc0bb4514b697b0be283c1:5be3060efe907846b6df3802435722890867db1a5d204475e629a2637f1d5614cec38450471370ff1d2db709ea11216e61fa9b82e61753f999c5c0d4e3c64afa"
+    }
+  ],
+  "admins": [
+    {
+      "id": 1,
+      "username": "SIVA",
+      "name": "State EB Administrator",
+      "passwordHash": "7985727ba5a6b71cd3670c61771b4a96:5319cda43def3faa9efd3a6501d3f1f100833b98eee4554dfcddcd414acad307c818917f2e4fb462809ae9ab74696d71d94971aee876ec41308263c969f3c9c7"
+    }
+  ],
+  "customers": [
+    {
+      "id": 1,
+      "stationCode": "EB001",
+      "meterId": "KK1001",
+      "name": "SIVA MAGESH C",
+      "mobile": "8870385519",
+      "gender": "Male",
+      "dob": "2006-01-25",
+      "idProof": "231914838332",
+      "address": "125- MIDDLE STREET, VADIVAMMAN PATTI, KOTTAI KARUGULAM",
+      "city": "TIRUNELVELI",
+      "district": "TIRUNELVELI",
+      "state": "Tamil Nadu",
+      "pincode": "627112",
+      "transformer": "T1",
+      "phase": "1-phase",
+      "feederId": "KK1001",
+      "units": 0.0059999999999999915,
+      "amount": 0,
+      "status": "Paid",
+      "totalPaid": 0,
+      "liveVoltage": 236.3,
+      "liveCurrent": 0,
+      "livePower": 0,
+      "liveFrequency": 50,
+      "livePowerFactor": 0,
+      "lastSeen": "2026-09-07T06:13:58.591Z",
+      "energyBaseline": 0.068,
+      "updatedAt": "2026-09-07T06:13:58.591Z"
+    }
+  ],
+  "tariffSlabs": [
+    {
+      "id": 5,
+      "phase": "3-phase",
+      "order": 1,
+      "label": "0-100",
+      "minUnits": 0,
+      "maxUnits": 100,
+      "rate": 3
+    },
+    {
+      "id": 6,
+      "phase": "3-phase",
+      "order": 2,
+      "label": "101-300",
+      "minUnits": 100,
+      "maxUnits": 300,
+      "rate": 6
+    },
+    {
+      "id": 7,
+      "phase": "3-phase",
+      "order": 3,
+      "label": "301-500",
+      "minUnits": 300,
+      "maxUnits": 500,
+      "rate": 8.5
+    },
+    {
+      "id": 8,
+      "phase": "3-phase",
+      "order": 4,
+      "label": "500+",
+      "minUnits": 500,
+      "maxUnits": null,
+      "rate": 10
+    },
+    {
+      "id": 1,
+      "phase": "1-phase",
+      "order": 1,
+      "label": "0-100 (Free slab)",
+      "minUnits": 0,
+      "maxUnits": 100,
+      "rate": 0
+    },
+    {
+      "id": 2,
+      "phase": "1-phase",
+      "order": 2,
+      "label": "101-200",
+      "minUnits": 100,
+      "maxUnits": 200,
+      "rate": 2.5
+    },
+    {
+      "id": 3,
+      "phase": "1-phase",
+      "order": 3,
+      "label": "201-300",
+      "minUnits": 200,
+      "maxUnits": 300,
+      "rate": 4
+    },
+    {
+      "id": 4,
+      "phase": "1-phase",
+      "order": 4,
+      "label": "300+",
+      "minUnits": 300,
+      "maxUnits": null,
+      "rate": 6
+    }
+  ],
+  "substationPanels": [
+    {
+      "id": "EB001",
+      "stationCode": "EB001",
+      "name": "EB001 - Ariyalur",
+      "substations": [
+        {
+          "name": "T1",
+          "feeders": [
+            {
+              "id": "KK1001",
+              "name": "SIVA MAGESH C",
+              "phase": "1-phase",
+              "voltage": 236.3,
+              "lastSeen": "2026-09-07T06:13:58.591Z"
+            }
+          ]
+        },
+        {
+          "name": "T2",
+          "feeders": []
+        },
+        {
+          "name": "T3",
+          "feeders": []
+        },
+        {
+          "name": "T4",
+          "feeders": []
+        },
+        {
+          "name": "T5",
+          "feeders": []
+        },
+        {
+          "name": "T6",
+          "feeders": []
+        },
+        {
+          "name": "T7",
+          "feeders": []
+        },
+        {
+          "name": "T8",
+          "feeders": []
+        },
+        {
+          "name": "T9",
+          "feeders": []
+        },
+        {
+          "name": "T10",
+          "feeders": []
+        }
+      ]
+    },
+    {
+      "id": "EB002",
+      "stationCode": "EB002",
+      "name": "EB002 - Perambalur",
+      "substations": [
+        {
+          "name": "T1",
+          "feeders": []
+        },
+        {
+          "name": "T2",
+          "feeders": []
+        },
+        {
+          "name": "T3",
+          "feeders": []
+        },
+        {
+          "name": "T4",
+          "feeders": []
+        },
+        {
+          "name": "T5",
+          "feeders": []
+        },
+        {
+          "name": "T6",
+          "feeders": []
+        },
+        {
+          "name": "T7",
+          "feeders": []
+        },
+        {
+          "name": "T8",
+          "feeders": []
+        },
+        {
+          "name": "T9",
+          "feeders": []
+        },
+        {
+          "name": "T10",
+          "feeders": []
+        }
+      ]
+    },
+    {
+      "id": "EB003",
+      "stationCode": "EB003",
+      "name": "EB003 - Trichy North",
+      "substations": [
+        {
+          "name": "T1",
+          "feeders": []
+        },
+        {
+          "name": "T2",
+          "feeders": []
+        },
+        {
+          "name": "T3",
+          "feeders": []
+        },
+        {
+          "name": "T4",
+          "feeders": []
+        },
+        {
+          "name": "T5",
+          "feeders": []
+        },
+        {
+          "name": "T6",
+          "feeders": []
+        },
+        {
+          "name": "T7",
+          "feeders": []
+        },
+        {
+          "name": "T8",
+          "feeders": []
+        },
+        {
+          "name": "T9",
+          "feeders": []
+        },
+        {
+          "name": "T10",
+          "feeders": []
+        }
+      ]
+    }
+  ]
+}
