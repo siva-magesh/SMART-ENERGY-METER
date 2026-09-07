@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Manage EB Stations — Power Systems Monitor</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-station">
+  <header class="topbar">
+    <a class="brand" href="index.html"><span class="dot"></span> Power Systems Monitor</a>
+    <nav>
+      <a class="btn btn-ghost btn-sm" href="state-dashboard.html">State overview</a>
+      <span class="dim" style="padding:0.5rem 0.4rem; font-size:0.85rem;">State Admin</span>
+      <button class="btn btn-ghost btn-sm" id="logoutBtn">Log out</button>
+    </nav>
+  </header>
+
+  <main class="page-shell">
+    <div class="eyebrow">State Admin</div>
+    <h1 style="font-size:1.6rem;">Manage EB Stations</h1>
+    
+    <!-- Add new station -->
+    <div class="panel mt-lg">
+      <h3>Add new EB station</h3>
+      <form id="addStationForm">
+        <div class="field-row">
+          <div class="field"><label>Station ID (userid) *</label><input id="newCode" placeholder="....." required></div>
+          <div class="field"><label>Station name *</label><input id="newName" placeholder="......" required></div>
+        </div>
+        <div class="field">
+          <label>Password *</label>
+          <input id="newPassword" type="text" placeholder="min 4 characters" required>
+        </div>
+        <p class="error-msg" id="addStationError"></p>
+        <div class="flex-between mt-lg">
+          <button type="submit" class="btn btn-primary">Add station</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Existing stations -->
+    <div class="panel">
+      <div class="flex-between">
+        <h3>Existing stations</h3>
+        <span class="muted" id="stationCount" style="font-size:0.8rem;"></span>
+      </div>
+      <div id="stationsList"></div>
+    </div>
+  </main>
+
+  <!-- Reset credentials modal -->
+  <div class="modal-backdrop" id="credsModal">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>Reset login — <span id="credsStationLabel" class="mono"></span></h3>
+        <button class="modal-close" data-close="credsModal">&times;</button>
+      </div>
+      <form id="credsForm">
+        <div class="field"><label>Station name</label><input id="credsName"></div>
+        <div class="field"><label>New password (leave blank to keep current)</label><input id="credsPassword" type="text" placeholder="min 4 characters"></div>
+        <p class="error-msg" id="credsError"></p>
+        <div class="flex-between mt-lg">
+          <button type="button" class="btn btn-ghost" data-close="credsModal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add transformer modal -->
+  <div class="modal-backdrop" id="xfmrModal">
+    <div class="modal">
+      <div class="modal-head">
+        <h3>Add transformer — <span id="xfmrStationLabel" class="mono"></span></h3>
+        <button class="modal-close" data-close="xfmrModal">&times;</button>
+      </div>
+      <form id="xfmrForm">
+        <div class="field"><label>Transformer name (e.g. T11)</label><input id="xfmrName" placeholder="T11" required></div>
+        <p class="dim" style="font-size:0.75rem;">Only use this if a station needs more than the standard T1&ndash;T10.</p>
+        <p class="error-msg" id="xfmrError"></p>
+        <div class="flex-between mt-lg">
+          <button type="button" class="btn btn-ghost" data-close="xfmrModal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add transformer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    requireAdminSession();
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      Session.clearAdmin();
+      window.location.href = 'state-login.html';
+    });
+
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    document.querySelectorAll('[data-close]').forEach((btn) => {
+      btn.addEventListener('click', () => closeModal(btn.dataset.close));
+    });
+
+    let currentCode = null;
+    let stations = [];
+    let gridPanels = []; // from /api/grid - gives us each station's transformer list
+
+    async function loadAll() {
+      try {
+        const [stationsRes, gridRes] = await Promise.all([Api.listStations(), Api.getGrid()]);
+        stations = stationsRes.stations;
+        gridPanels = gridRes.panels;
+        renderStations();
+      } catch (err) {
+        if (err.message.toLowerCase().includes('token') || err.message.includes('401') || err.message.includes('403')) {
+          Session.clearAdmin();
+          window.location.href = 'state-login.html';
+        }
+      }
+    }
+
+    function renderStations() {
+      document.getElementById('stationCount').textContent = `${stations.length} station${stations.length === 1 ? '' : 's'}`;
+      const list = document.getElementById('stationsList');
+      if (!stations.length) {
+        list.innerHTML = `<div class="empty-state">No stations yet.</div>`;
+        return;
+      }
+      list.innerHTML = stations.map((s) => {
+        const panel = gridPanels.find((p) => p.id === s.code);
+        const subs = panel ? panel.substations : [];
+        const chips = subs.map((sub) => `
+          <span class="btn btn-ghost btn-sm" style="cursor:default; margin:0.2rem 0.3rem 0 0; padding:0.3rem 0.55rem;">
+            ${escapeHtml(sub.name)}
+            <button type="button" data-del-xfmr="${escapeHtml(s.code)}" data-name="${escapeHtml(sub.name)}"
+              style="background:none; border:none; color:var(--danger); margin-left:0.35rem; cursor:pointer; font-weight:bold;"
+              title="Remove ${escapeHtml(sub.name)}">&times;</button>
+          </span>
+        `).join('');
+        return `
+          <div class="panel" style="margin-top:0.9rem;">
+            <div class="flex-between">
+              <div>
+                <div class="mono" style="font-size:1.05rem;">${escapeHtml(s.code)}</div>
+                <div class="dim" style="font-size:0.85rem;">${escapeHtml(s.name)}</div>
+              </div>
+              <div style="white-space:nowrap;">
+                <button class="btn btn-ghost btn-sm" data-creds="${escapeHtml(s.code)}" data-name="${escapeHtml(s.name)}">Reset login</button>
+                <button class="btn btn-ghost btn-sm" data-add-xfmr="${escapeHtml(s.code)}">+ Transformer</button>
+                <button class="btn btn-danger btn-sm" data-del-station="${escapeHtml(s.code)}">Remove station</button>
+              </div>
+            </div>
+            <div style="margin-top:0.75rem;">
+              <span class="dim" style="font-size:0.78rem;">Transformers:</span><br>
+              ${chips || '<span class="dim" style="font-size:0.8rem;">none</span>'}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    document.getElementById('stationsList').addEventListener('click', async (e) => {
+      if (e.target.dataset.creds) {
+        currentCode = e.target.dataset.creds;
+        document.getElementById('credsStationLabel').textContent = currentCode;
+        document.getElementById('credsName').value = e.target.dataset.name || '';
+        document.getElementById('credsPassword').value = '';
+        document.getElementById('credsError').classList.remove('show');
+        openModal('credsModal');
+        return;
+      }
+      if (e.target.dataset.addXfmr) {
+        currentCode = e.target.dataset.addXfmr;
+        document.getElementById('xfmrStationLabel').textContent = currentCode;
+        document.getElementById('xfmrName').value = '';
+        document.getElementById('xfmrError').classList.remove('show');
+        openModal('xfmrModal');
+        return;
+      }
+      if (e.target.dataset.delXfmr) {
+        const code = e.target.dataset.delXfmr;
+        const name = e.target.dataset.name;
+        if (!confirm(`Remove transformer ${name} from ${code}? This only works if it has no registered consumers.`)) return;
+        try {
+          await Api.deleteTransformer(code, name);
+          loadAll();
+        } catch (err) {
+          alert(err.message);
+        }
+        return;
+      }
+      if (e.target.dataset.delStation) {
+        const code = e.target.dataset.delStation;
+        if (!confirm(`Remove EB station ${code} entirely? This deletes its login and grid panel. Only works if it has no registered consumers.`)) return;
+        try {
+          await Api.deleteStation(code);
+          loadAll();
+        } catch (err) {
+          alert(err.message);
+        }
+      }
+    });
+
+    document.getElementById('addStationForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errEl = document.getElementById('addStationError');
+      errEl.classList.remove('show');
+      try {
+        await Api.addStation({
+          code: document.getElementById('newCode').value,
+          name: document.getElementById('newName').value,
+          password: document.getElementById('newPassword').value
+        });
+        document.getElementById('addStationForm').reset();
+        loadAll();
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.classList.add('show');
+      }
+    });
+
+    document.getElementById('credsForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errEl = document.getElementById('credsError');
+      errEl.classList.remove('show');
+      try {
+        const payload = { name: document.getElementById('credsName').value };
+        const pw = document.getElementById('credsPassword').value;
+        if (pw) payload.password = pw;
+        await Api.updateStationCredentials(currentCode, payload);
+        closeModal('credsModal');
+        loadAll();
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.classList.add('show');
+      }
+    });
+
+    document.getElementById('xfmrForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errEl = document.getElementById('xfmrError');
+      errEl.classList.remove('show');
+      try {
+        await Api.addTransformer(currentCode, document.getElementById('xfmrName').value);
+        closeModal('xfmrModal');
+        loadAll();
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.classList.add('show');
+      }
+    });
+
+    loadAll();
+  </script>
+</body>
+</html>

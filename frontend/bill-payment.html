@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Pay Your EB Bill — Power Systems Monitor</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="bg-billing">
+  <header class="topbar">
+    <a class="brand" href="index.html"><span class="dot"></span> Power Systems Monitor</a>
+    <nav><a href="index.html">Home</a></nav>
+  </header>
+
+  <main class="narrow" style="max-width:520px;">
+    <div class="eyebrow">Public Bill Payment</div>
+    <h1 style="font-size:1.5rem;">💳 Pay Your Electricity Bill</h1>
+
+    <div class="panel mt-lg" id="searchPanel">
+      <div class="field">
+        <label for="meterSearch">Meter ID</label>
+        <input id="meterSearch" placeholder="e.g. AR1001" autocomplete="off">
+      </div>
+      <button class="btn btn-primary btn-block" id="searchBtn">Look up bill</button>
+      <p class="error-msg" id="searchError"></p>
+    </div>
+
+    <div class="panel mt-lg hidden" id="resultPanel"></div>
+  </main>
+
+  <script src="js/api.js"></script>
+  <script>
+    const searchBtn = document.getElementById('searchBtn');
+    const meterInput = document.getElementById('meterSearch');
+    const errorEl = document.getElementById('searchError');
+    const resultPanel = document.getElementById('resultPanel');
+
+    async function search() {
+      errorEl.classList.remove('show');
+      resultPanel.classList.add('hidden');
+      const meterId = meterInput.value.trim();
+      if (!meterId) {
+        errorEl.textContent = 'Please enter a meter ID';
+        errorEl.classList.add('show');
+        return;
+      }
+      searchBtn.disabled = true;
+      searchBtn.textContent = 'Searching…';
+      try {
+        const { customer } = await Api.lookupBill(meterId);
+        renderResult(customer);
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.classList.add('show');
+      } finally {
+        searchBtn.disabled = false;
+        searchBtn.textContent = 'Look up bill';
+      }
+    }
+    searchBtn.addEventListener('click', search);
+    meterInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') search(); });
+
+    function renderResult(customer) {
+      resultPanel.classList.remove('hidden');
+      const amount = customer.amount;
+
+      if (customer.status === 'Paid') {
+        resultPanel.innerHTML = `
+          <h3 style="color:var(--text);">${escapeHtml(customer.name || 'Customer')}</h3>
+          <p class="dim mono">Meter: ${escapeHtml(customer.meterId)}</p>
+          <p class="pill pill-ok mt-lg">✅ Bill already paid</p>
+        `;
+        return;
+      }
+
+      if (amount <= 0) {
+        resultPanel.innerHTML = `
+          <h3>${escapeHtml(customer.name || 'Customer')}</h3>
+          <p class="dim mono">Meter: ${escapeHtml(customer.meterId)}</p>
+          <p class="pill pill-warn mt-lg">No bill generated yet</p>
+        `;
+        return;
+      }
+
+      // Demo UPI VPA — replace with your organization's real payee ID before going live.
+      const upiVpa = 'demo-eb-office@upi';
+      const upiLink = `upi://pay?pa=${upiVpa}&pn=EB%20Bill%20Payment&am=${amount}&cu=INR&tn=Electricity%20Bill%20-${customer.meterId}`;
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiLink)}`;
+
+      resultPanel.innerHTML = `
+        <h3>${escapeHtml(customer.name || 'Customer')}</h3>
+        <p class="dim mono">Mobile: ${escapeHtml(customer.mobile) || '—'} · ${customer.phase === '3-phase' ? '3-Phase' : '1-Phase'} connection</p>
+        <p class="mono" style="font-size:1.3rem; font-weight:600; margin:1rem 0; color:var(--copper-soft);">
+          Amount due: ${formatCurrency(amount)}
+        </p>
+        <div style="text-align:center; margin:1.2rem 0;">
+          <img src="${qrUrl}" alt="UPI QR code" style="border-radius:8px; border:1px solid var(--border);">
+          <p class="dim" style="font-size:0.8rem; margin-top:0.5rem;">Scan with GPay / PhonePe / Paytm</p>
+        </div>
+        <button class="btn btn-primary btn-block" id="payBtn">Pay with UPI app</button>
+        <p class="muted" style="font-size:0.75rem; margin-top:0.75rem;">This demo confirms payment locally after redirect — wire a real payment gateway webhook for production use.</p>
+      `;
+      document.getElementById('payBtn').addEventListener('click', async () => {
+        window.location.href = upiLink;
+        try {
+          await Api.payBill(customer.meterId);
+        } catch { /* best-effort in this demo */ }
+      });
+    }
+  </script>
+</body>
+</html>
